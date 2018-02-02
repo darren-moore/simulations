@@ -87,7 +87,6 @@ for t=1:frames
 
 	% Integrate with euler integration
 	fieldNodesV = fieldNodesV + dt*accel; % velocity = \int{accel}
-	oldFieldNodes = fieldNodes;
 	fieldNodes = fieldNodes + dt*fieldNodesV; % position = \int{velocity}
 
 	% Simple wall collisions.
