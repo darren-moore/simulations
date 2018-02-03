@@ -2,9 +2,7 @@
 Misc. simulation code.
 
 SPH:
-![SPH fluid sim](https://github.com/darren-moo/simulations/matlab/SPH/sphDemo.gif)
+![SPH fluid sim](https://github.com/darren-moore/simulations/matlab/SPH/sphDemo.gif)
 
 Meshfree elasticity:
-![meshfree bar bending](https://github.com/darren-moo/simulations/matlab/meshfreeElasticity/barBend.gif)
-
-simulations/matlab/meshfreeElasticity/barBend.gif
+![meshfree bar bending](https://github.com/darren-moore/simulations/matlab/meshfreeElasticity/barBend.gif)
