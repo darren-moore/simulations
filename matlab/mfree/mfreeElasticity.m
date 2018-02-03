@@ -85,9 +85,9 @@ disp_0 = zeros(numNodes*2,1);
 disp_00 = zeros(numNodes*2,1);
 
 % We can draw our initial configuration and integration grid before starting the simulation:
-% drawGrid(gaussNodes, gaussSquareRad*2);
-% scatter(fieldNodes(:,1), fieldNodes(:,2),5000/numNodes);
-% drawnow
+drawGrid(gaussNodes, gaussSquareRad*2);
+scatter(fieldNodes(:,1), fieldNodes(:,2),5000/numNodes);
+drawnow
 
 
 % Boundary conditions: "Pin" nodes on the very left to a wall.
@@ -128,6 +128,7 @@ if(dynamic)
 		fun = @(x) neohookeanEnergy(x,initConfig,gaussNodes, hRad,gaussSquareRad,mu,lam, shapeCell, shapeDxCell, shapeDyCell, hRadCell);
 		fUnc = @(x) energyWrapper(fun,x,M, extForces, dt, dof, dof2, disp_0, disp_00);
 
+		% Implicit euler for the linear solve.
 		A = M + (dt^2 * K);
 		B =  M*(2*disp_0 - disp_00) + (extForces)*(dt^2);
 		
