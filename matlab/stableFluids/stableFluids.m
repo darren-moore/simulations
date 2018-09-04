@@ -38,9 +38,9 @@ for t=1:MAXTIME
 	
 	% Advect vector field and heat with semi-lagrangian technique.
 	% Integration is explicit euler.
-	v_x = advect(v_x, v_x_old, v_y_old, dt);
-	v_y = advect(v_y, v_x_old, v_y_old, dt);
-	q = advect(q, v_x_old, v_y_old, dt);
+	v_x = advect_fast(v_x, v_x_old, v_y_old, dt);
+	v_y = advect_fast(v_y, v_x_old, v_y_old, dt);
+	q = advect_fast(q, v_x_old, v_y_old, dt);
 
 	% Move into frequency domain
 	fd_x = fftshift(fft2(v_x));
@@ -61,7 +61,7 @@ for t=1:MAXTIME
 	drawnow
 end
 
-% Advection with semi-lagrangian method.
+% Advection with semi-lagrangian method. Loopy edition.
 function q_new = advect(q, v_x, v_y, dt)
 	global gridres;
 	q_new = zeros(gridres);
@@ -123,4 +123,20 @@ function q_itp = interpolate_value(pos, q)
 		
 	% Bilinear interpolation.
 	q_itp = [1-alpha_x alpha_x]*[q(i,j) q(i, jp1);q(ip1,j) q(ip1,jp1)]*[1-beta_x ; beta_x];
+end
+
+% Advection with semi-lagrangian method. Vectorized edition.
+function q_new = advect_fast(q, v_x, v_y, dt)
+	global gridres;
+	% Repeat values to achieve periodic boundary conditions.
+	[xx, yy] = meshgrid(linspace(.5/gridres-1,1-.5/gridres+1,gridres*3), linspace(.5/gridres-1,1-.5/gridres+1,gridres*3));
+	q = repmat(q, 3);
+	
+	[indList_x, indList_y] = meshgrid(1:gridres, 1:gridres);
+	indList = [indList_x(:) indList_y(:)];
+	X_curr = (indList - [.5 .5])/gridres;
+	X_prev = X_curr - dt*[v_x(sub2ind(size(v_x),indList(:,1), indList(:,2))) ...
+						  v_y(sub2ind(size(v_y),indList(:,1), indList(:,2)))];		% Explicit euler
+	q_new = interp2(xx, yy, rot90(fliplr(q)), X_prev(:,1), X_prev(:,2), 'bilinear');
+	q_new = rot90(fliplr(reshape(q_new, gridres, gridres)));
 end
