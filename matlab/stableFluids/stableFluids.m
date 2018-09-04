@@ -1,6 +1,5 @@
 % A 2D fluid simulation with periodic boundary conditions.
 % Based on Stable Fluids by Yos Stam. http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/ns.pdf
-% Code is made for readability, not efficiency.
 
 cla
 hold on
@@ -74,6 +73,7 @@ function q_new = advect(q, v_x, v_y, dt)
 	end
 end
 
+% Projects a frequency domain signal into a divergence-free space.
 function [fd_x, fd_y] = project_out_divergence(fd_x, fd_y)
 	global gridres;
 	for i=1:gridres
