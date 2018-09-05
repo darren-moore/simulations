@@ -1,5 +1,5 @@
 % A 2D fluid simulation with periodic boundary conditions.
-% Based on Stable Fluids by Yos Stam. http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/ns.pdf
+% Based on Stable Fluids by Jos Stam. http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/ns.pdf
 
 cla
 hold on
