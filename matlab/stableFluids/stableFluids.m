@@ -7,7 +7,7 @@ axis square
 
 % Initialization
 global gridres;
-gridres = 32;
+gridres = 128;
 axis([.5 gridres+.5 .5 gridres+.5])
 [ex,why] = meshgrid(1:gridres,1:gridres);	% Used for rendering.
 
@@ -37,24 +37,23 @@ for t=1:MAXTIME
 	
 	% Advect vector field and heat with semi-lagrangian technique.
 	% Integration is explicit euler.
-	v_x = advect_fast(v_x, v_x_old, v_y_old, dt);
-	v_y = advect_fast(v_y, v_x_old, v_y_old, dt);
-	q = advect_fast(q, v_x_old, v_y_old, dt);
+	v_x = advect_vectorized(v_x, v_x_old, v_y_old, dt);
+	v_y = advect_vectorized(v_y, v_x_old, v_y_old, dt);
+	q = advect_vectorized(q, v_x_old, v_y_old, dt);
 
 	% Move into frequency domain
 	fd_x = fftshift(fft2(v_x));
 	fd_y = fftshift(fft2(v_y));
 
 	% Project out the divergence.
-	[fd_x, fd_y] = project_out_divergence(fd_x, fd_y);
-	
+	[fd_x, fd_y] = project_out_divergence_vectorized(fd_x, fd_y);
+
 	% Return to spacial domain
 	v_x = ifft2(ifftshift(fd_x),'symmetric');
 	v_y = ifft2(ifftshift(fd_y),'symmetric');
 	
 	% Visualize pressure and velocity field
 	cla;
-	axis([.5 gridres+.5 .5 gridres+.5])
 	imagesc(q');
 % 	quiver(ex',why',v_x, v_y, 'AutoScale', 'on', 'AutoScaleFactor', .9, 'Color','black', 'LineWidth', 1, 'ShowArrowHead', 'off');
 	drawnow
@@ -73,7 +72,7 @@ function q_new = advect(q, v_x, v_y, dt)
 	end
 end
 
-% Projects a frequency domain signal into a divergence-free space.
+% Projects a frequency domain signal into a divergence-free space. Loopy edition.
 function [fd_x, fd_y] = project_out_divergence(fd_x, fd_y)
 	global gridres;
 	for i=1:gridres
@@ -126,10 +125,10 @@ function q_itp = interpolate_value(pos, q)
 end
 
 % Advection with semi-lagrangian method. Vectorized edition.
-function q_new = advect_fast(q, v_x, v_y, dt)
+function q_new = advect_vectorized(q, v_x, v_y, dt)
 	global gridres;
 	% Repeat values to achieve periodic boundary conditions.
-	[xx, yy] = meshgrid(linspace(.5/gridres-1,1-.5/gridres+1,gridres*3), linspace(.5/gridres-1,1-.5/gridres+1,gridres*3));
+	[xx, yy] = meshgrid(linspace(.5/gridres-1,2-.5/gridres,gridres*3), linspace(.5/gridres-1,2-.5/gridres,gridres*3));
 	q = repmat(q, 3);
 	
 	[indList_x, indList_y] = meshgrid(1:gridres, 1:gridres);
@@ -139,4 +138,20 @@ function q_new = advect_fast(q, v_x, v_y, dt)
 						  v_y(sub2ind(size(v_y),indList(:,1), indList(:,2)))];		% Explicit euler
 	q_new = interp2(xx, yy, rot90(fliplr(q)), X_prev(:,1), X_prev(:,2), 'bilinear');
 	q_new = rot90(fliplr(reshape(q_new, gridres, gridres)));
+end
+
+% Projects a frequency domain signal into a divergence-free space. Vectorized edition.
+function [fd_x, fd_y] = project_out_divergence_vectorized(fd_x, fd_y)
+	global gridres;
+	[indList_x, indList_y] = meshgrid(1:gridres, 1:gridres);
+	indList = [indList_x(:) indList_y(:)];
+	v_wave = (indList - [1 1])/gridres - [.5 .5];
+	v_wave_perp = [-v_wave(:,2) v_wave(:,1)];
+	norms = sqrt(v_wave_perp(:,1).^2 + v_wave_perp(:,2).^2);
+	goodInd = norms ~= 0;
+	v_wave_perp(goodInd,:) = v_wave_perp(goodInd,:) ./ norms(goodInd);
+	c = fd_x(sub2ind(size(fd_x),indList(:,1), indList(:,2))) .* v_wave_perp(:, 1) + ...
+	    fd_y(sub2ind(size(fd_y),indList(:,1), indList(:,2))) .* v_wave_perp(:, 2);
+	fd_x = rot90(fliplr(reshape(c.*v_wave_perp(:,1), gridres, gridres)));
+	fd_y = rot90(fliplr(reshape(c.*v_wave_perp(:,2), gridres, gridres)));
 end
